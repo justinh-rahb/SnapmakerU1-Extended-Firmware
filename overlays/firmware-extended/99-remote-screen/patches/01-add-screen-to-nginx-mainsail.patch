@@ -1,6 +1,6 @@
 --- a/etc/nginx/sites-available/mainsail
 +++ b/etc/nginx/sites-available/mainsail
-@@ -109,2 +109,26 @@
+@@ -110,2 +110,26 @@
          proxy_pass http://mjpgstreamer4/;
      }
 +
