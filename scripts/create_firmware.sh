@@ -48,7 +48,7 @@ unsquashfs -d "$TEMP_DIR/rootfs" "$TEMP_DIR/rk-unpacked/rootfs.img"
 
 echo ">> Verifying ownership preservation..."
 check_perms "$TEMP_DIR/rootfs/etc/passwd" 0 0
-check_perms "$TEMP_DIR/rootfs/home/lava/bin/gui" 1000 1000
+check_perms "$TEMP_DIR/rootfs/home/lava/bin/hwver.sh" 1000 1000
 echo "   Ownership check passed"
 
 for overlay; do
@@ -68,7 +68,7 @@ for overlay; do
   if [[ -d "$overlay/patches/" ]]; then
     for patchfile in "$overlay/patches/"*.patch; do
       echo "[+] Applying patch: $(basename "$patchfile")"
-      patch -d "$TEMP_DIR/rootfs" -p1 < "$patchfile"
+      patch -F 0 -d "$TEMP_DIR/rootfs" -p1 < "$patchfile"
     done
   fi
 

@@ -1,3 +1,7 @@
+---
+title: Camera Support
+---
+
 # Camera Support
 
 **Available in: Extended firmware only**
@@ -10,6 +14,7 @@ The extended firmware includes hardware-accelerated camera support.
 - v4l2-mpp: MIPI CSI and USB camera support
 - WebRTC low-latency streaming
 - Hot-plug detection for USB cameras
+- Support AI detection and Snapmaker Cloud features
 
 ## Accessing Cameras
 
@@ -63,5 +68,3 @@ This enables the `--syslog` flag for all camera-related services. Logs are avail
 ## Timelapse Support
 
 Fluidd timelapse plugin is included (no settings support).
-
-Note: Time-lapses are not available via mobile app in cloud mode.

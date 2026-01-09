@@ -18,6 +18,9 @@ RUN apt-get update -y && \
       g++-aarch64-linux-gnu \
       gcc-aarch64-linux-gnu \
       file \
+      golang-go \
+      ffmpeg \
+      u-boot-tools \
     && git config --global --add safe.directory '*' \
     && rm -rf /var/lib/apt/lists/*
 

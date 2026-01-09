@@ -1,3 +1,7 @@
+---
+title: Custom Snapmaker U1 Firmware
+---
+
 # Custom Snapmaker U1 Firmware
 
 Custom firmware for the Snapmaker U1 3D printer, enabling debug features like SSH access and adding additional capabilities.
@@ -35,10 +39,8 @@ All basic firmware features plus:
 - WebRTC low-latency streaming
 - Fluidd or Mainsail (selectable) with timelapse plugin
 - [Remote Screen](remote_screen.md) - View printer screen remotely via web browser
-
-Known issues:
-
-- The time-lapses are not available via mobile app when using Snapmaker Cloud.
+- [Monitoring](monitoring.md) - Local OpenMetrics exporter for monitoring systems
+- [Timelapse recovery tool](https://github.com/horzadome/snapmaker-u1-timelapse-recovery) - Recover unplayable timelapse videos
 
 ## Documentation
 
@@ -51,6 +53,7 @@ Known issues:
 - [RFID Filament Tag Support](rfid_support.md) - RFID filament tag usage and programming
 - [Data Persistence](data_persistence.md) - Persistent storage configuration
 - [Remote Screen](remote_screen.md) - Access printer screen remotely via web browser
+- [Monitoring](monitoring.md) - Prometheus, Homeassistant integration, Datadog, monitoring, etc.
 
 ## Support
 

@@ -1,3 +1,7 @@
+---
+title: RFID Filament Tag Support
+---
+
 # RFID Filament Tag Support
 
 The Snapmaker U1 can automatically detect filament properties (material type, color, temperatures) by reading RFID tags attached to filament spools.
@@ -89,10 +93,10 @@ Using the non-standard OpenSpool `subtype` field it is possible to specify a mat
 - `brand` (optional) - Manufacturer name (e.g., "Generic", "Overture", "PolyLite")
 - `min_temp` (optional) - Minimum nozzle temperature in °C
 - `max_temp` (optional) - Maximum nozzle temperature in °C
-- `bed_min_temp` (optional) - Minimum bed temperature in °C
-- `bed_max_temp` (optional) - Maximum bed temperature in °C
 
 **Supported non-standard OpenSpool Fields:**
+- `bed_min_temp` (optional) - Minimum bed temperature in °C
+- `bed_max_temp` (optional) - Maximum bed temperature in °C
 - `subtype` (optional, default: "Basic") - Material subtype (e.g. "Rapid", "HF")
 
 ## Snapmaker Orca Filament Naming Scheme
