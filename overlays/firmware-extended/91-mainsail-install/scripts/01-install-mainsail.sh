@@ -23,8 +23,8 @@ if [[ ! -L "$ROOTFS_DIR/etc/nginx/sites-enabled/fluidd" ]]; then
 fi
 
 VERSION=v2.16.1
-URL=https://github.com/justinh-rahb/mainsail/releases/download/v2.16.2-dev/mainsail.zip
-SHA256=5e1f69865390918d01243373625090ae28438eac9e82ef730d098858373bb815
+URL=https://github.com/mainsail-crew/mainsail/releases/download/v2.17.0/mainsail.zip
+SHA256=d010f4df25557d520ccdbb8e42fc381df2288e6a5c72d3838a5a2433c7a31d4e
 FILENAME=mainsail-$VERSION.zip
 
 if [[ ! -f "$TARGET_DIR/$FILENAME" ]]; then
