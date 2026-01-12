@@ -15,6 +15,7 @@ The extended firmware includes hardware-accelerated camera support.
 - WebRTC low-latency streaming
 - Hot-plug detection for USB cameras
 - Support AI detection and Snapmaker Cloud features
+- V4L2 controls (exposure, gain, white balance) for supported cameras
 
 ## Accessing Cameras
 
@@ -36,6 +37,13 @@ You need to add USB camera in Fluidd. Use the following
 settings for the best performance:
 
 <img src="images/usb_cam.png" alt="Fluidd USB camera" width="300"/>
+
+## V4L2 Controls
+
+The paxx12 camera stack runs `v4l2-ctrls` alongside the stream service to expose
+standard V4L2 controls (exposure, gain, white balance, focus where supported) to
+the UI. Controls appear automatically for cameras that report them. If a control
+is missing, confirm the camera advertises it in its V4L2 capabilities.
 
 ## Switch to Snapmaker's Original Camera Stack
 
