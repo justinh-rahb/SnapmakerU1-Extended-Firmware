@@ -1,0 +1,64 @@
+status:
+  ace:
+    title: ACE Instance
+    items:
+      - label: Service
+        cmd: |
+          if [ -f /var/run/klippy-router-ace.pid ] && kill -0 "$(cat /var/run/klippy-router-ace.pid 2>/dev/null)" 2>/dev/null; then
+            echo Running
+          else
+            echo Stopped
+          fi
+      - label: Log Path
+        cmd: echo /home/lava/printer_data/logs/klippy-router-ace.log
+      - label: Socket
+        cmd: |
+          if [ -S /home/lava/printer_data/comms/klippy-router-ace.sock ]; then
+            echo Present
+          else
+            echo Missing
+          fi
+      - label: Vanilla Klipper
+        cmd: |
+          if [ -f /home/lava/klipper-vanilla/klippy/klippy.py ]; then
+            echo Present
+          else
+            echo Missing
+          fi
+
+settings:
+  ace:
+    items:
+      enabled:
+        label: ACE Instance
+        description: Enable the ACE auxiliary Klipper instance and bridge macros.
+        get_cmd:
+          - /usr/local/bin/extended-config.py
+          - get
+          - /home/lava/printer_data/config/extended/extended2.cfg
+          - ace
+          - enabled
+          - "false"
+        options:
+          "true":
+            label: Enabled
+            cmd:
+              - bash
+              - -xc
+              - |
+                /usr/local/bin/extended-config.py add /home/lava/printer_data/config/extended/extended2.cfg ace enabled true
+                /usr/local/bin/extended-config.py add /home/lava/printer_data/config/extended/extended2.cfg router enabled true
+                /etc/init.d/S98klipper-router-instances restart
+                /etc/init.d/S99klipper-router restart
+                /etc/init.d/S60klipper restart
+          "false":
+            label: Disabled
+            cmd:
+              - bash
+              - -xc
+              - |
+                /usr/local/bin/extended-config.py add /home/lava/printer_data/config/extended/extended2.cfg ace enabled false
+                /etc/init.d/S98klipper-router-instances restart
+                /etc/init.d/S99klipper-router restart
+                /etc/init.d/S60klipper restart
+        default: "false"
