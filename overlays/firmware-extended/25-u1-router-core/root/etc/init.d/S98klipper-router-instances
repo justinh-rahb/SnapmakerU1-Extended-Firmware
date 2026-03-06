@@ -1,0 +1,188 @@
+#!/bin/sh
+
+EXTENDED_CFG="/home/lava/printer_data/config/extended/extended2.cfg"
+INSTANCE_DIR="/home/lava/printer_data/config/extended/router/instances"
+DEFAULT_KLIPPY="/home/lava/klipper/klippy/klippy.py"
+PYTHON="/usr/bin/python3"
+RUN_AS="lava"
+
+is_router_enabled() {
+    [ "$(/usr/local/bin/extended-config.py get "$EXTENDED_CFG" router enabled false 2>/dev/null)" = "true" ]
+}
+
+instance_enabled() {
+    name="$1"
+    enabled_file="$INSTANCE_DIR/$name/enabled_config"
+
+    if [ ! -f "$enabled_file" ]; then
+        return 0
+    fi
+
+    set -- $(cat "$enabled_file" 2>/dev/null)
+    section="$1"
+    key="$2"
+    default="$3"
+
+    if [ -z "$section" ] || [ -z "$key" ] || [ -z "$default" ]; then
+        echo "Invalid enabled_config for instance $name"
+        return 1
+    fi
+
+    [ "$(/usr/local/bin/extended-config.py get "$EXTENDED_CFG" "$section" "$key" "$default" 2>/dev/null)" = "true" ]
+}
+
+instance_klippy_path() {
+    name="$1"
+    klippy_file="$INSTANCE_DIR/$name/klippy_path"
+
+    if [ -f "$klippy_file" ]; then
+        sed -n '1p' "$klippy_file"
+    else
+        echo "$DEFAULT_KLIPPY"
+    fi
+}
+
+instance_pidfile() {
+    echo "/var/run/klippy-router-$1.pid"
+}
+
+instance_cfg() {
+    echo "$INSTANCE_DIR/$1/printer.cfg"
+}
+
+instance_sock() {
+    echo "/home/lava/printer_data/comms/klippy-router-$1.sock"
+}
+
+instance_serial() {
+    echo "/home/lava/printer_data/comms/klippy-router-$1.serial"
+}
+
+instance_log() {
+    echo "/home/lava/printer_data/logs/klippy-router-$1.log"
+}
+
+pid_matches_instance() {
+    name="$1"
+    pidfile="$(instance_pidfile "$name")"
+    klippy="$(instance_klippy_path "$name")"
+    cfg="$(instance_cfg "$name")"
+    sock="$(instance_sock "$name")"
+
+    [ -f "$pidfile" ] || return 1
+    pid="$(cat "$pidfile" 2>/dev/null)"
+    [ -n "$pid" ] || return 1
+    [ -r "/proc/$pid/cmdline" ] || return 1
+
+    cmdline="$(tr '\000' ' ' < "/proc/$pid/cmdline" 2>/dev/null)"
+    echo "$cmdline" | grep -F "$klippy" >/dev/null 2>&1 || return 1
+    echo "$cmdline" | grep -F "$cfg" >/dev/null 2>&1 || return 1
+    echo "$cmdline" | grep -F "$sock" >/dev/null 2>&1 || return 1
+
+    return 0
+}
+
+start_instance() {
+    name="$1"
+    cfg="$(instance_cfg "$name")"
+    sock="$(instance_sock "$name")"
+    serial="$(instance_serial "$name")"
+    log="$(instance_log "$name")"
+    pidfile="$(instance_pidfile "$name")"
+    klippy="$(instance_klippy_path "$name")"
+
+    if [ ! -f "$cfg" ]; then
+        echo "Skipping instance $name: missing $cfg"
+        return 0
+    fi
+
+    if ! instance_enabled "$name"; then
+        echo "Skipping instance $name: disabled"
+        return 0
+    fi
+
+    if pid_matches_instance "$name"; then
+        echo "Instance $name already running"
+        return 0
+    fi
+
+    rm -f "$pidfile"
+    mkdir -p /home/lava/printer_data/comms /home/lava/printer_data/logs
+    touch "$log"
+    chown "$RUN_AS:$RUN_AS" "$log"
+
+    printf "Starting klippy-router-%s: " "$name"
+    start-stop-daemon -S -b -q -m -u "$RUN_AS" \
+        -p "$pidfile" \
+        -x "$PYTHON" -- \
+        "$klippy" "$cfg" -I "$serial" -a "$sock" -l "$log" -u "$RUN_AS"
+    echo "OK"
+}
+
+stop_instance() {
+    name="$1"
+    pidfile="$(instance_pidfile "$name")"
+
+    printf "Stopping klippy-router-%s: " "$name"
+    if [ -f "$pidfile" ]; then
+        start-stop-daemon -K -q -p "$pidfile" -s TERM
+        rm -f "$pidfile"
+        echo "OK"
+    else
+        echo "not running"
+    fi
+}
+
+start() {
+    if ! is_router_enabled; then
+        echo "Router disabled; not starting auxiliary Klipper instances."
+        exit 0
+    fi
+
+    if [ ! -d "$INSTANCE_DIR" ]; then
+        echo "No router instance directory present."
+        exit 0
+    fi
+
+    for path in "$INSTANCE_DIR"/*; do
+        [ -d "$path" ] || continue
+        name="$(basename "$path")"
+        start_instance "$name"
+    done
+}
+
+stop() {
+    if [ -d "$INSTANCE_DIR" ]; then
+        for path in "$INSTANCE_DIR"/*; do
+            [ -d "$path" ] || continue
+            name="$(basename "$path")"
+            stop_instance "$name"
+        done
+    fi
+
+    for pidfile in /var/run/klippy-router-*.pid; do
+        [ -f "$pidfile" ] || continue
+        name="$(basename "$pidfile" | sed 's/^klippy-router-//; s/\.pid$//')"
+        stop_instance "$name"
+    done
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart|reload)
+        stop
+        sleep 1
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit $?

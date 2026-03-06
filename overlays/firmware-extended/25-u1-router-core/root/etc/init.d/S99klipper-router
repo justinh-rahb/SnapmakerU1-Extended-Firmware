@@ -1,0 +1,121 @@
+#!/bin/sh
+
+EXTENDED_CFG="/home/lava/printer_data/config/extended/extended2.cfg"
+ROUTER_CFG="/home/lava/printer_data/config/extended/router/klipper_router.cfg"
+ROUTER_RUNTIME_CFG="/home/lava/printer_data/config/extended/router/klipper_router.runtime.cfg"
+INSTANCE_DIR="/home/lava/printer_data/config/extended/router/instances"
+PIDFILE="/var/run/klipper-router.pid"
+LOGFILE="/home/lava/printer_data/logs/klipper-router.log"
+DAEMON="/usr/local/sbin/klipper-routerd"
+PYTHON="/usr/bin/python3"
+RUN_AS="lava"
+
+is_router_enabled() {
+    [ "$(/usr/local/bin/extended-config.py get "$EXTENDED_CFG" router enabled false 2>/dev/null)" = "true" ]
+}
+
+instance_enabled() {
+    name="$1"
+    enabled_file="$INSTANCE_DIR/$name/enabled_config"
+
+    if [ ! -f "$enabled_file" ]; then
+        return 0
+    fi
+
+    set -- $(cat "$enabled_file" 2>/dev/null)
+    section="$1"
+    key="$2"
+    default="$3"
+
+    if [ -z "$section" ] || [ -z "$key" ] || [ -z "$default" ]; then
+        echo "Invalid enabled_config for instance $name"
+        return 1
+    fi
+
+    [ "$(/usr/local/bin/extended-config.py get "$EXTENDED_CFG" "$section" "$key" "$default" 2>/dev/null)" = "true" ]
+}
+
+append_instance_blocks() {
+    if [ ! -d "$INSTANCE_DIR" ]; then
+        return 0
+    fi
+
+    for path in "$INSTANCE_DIR"/*; do
+        [ -d "$path" ] || continue
+        name="$(basename "$path")"
+        cfg="$path/printer.cfg"
+        sock="/home/lava/printer_data/comms/klippy-router-$name.sock"
+
+        [ -f "$cfg" ] || continue
+        instance_enabled "$name" || continue
+
+        if grep -F "[klippy $name]" "$ROUTER_RUNTIME_CFG" >/dev/null 2>&1; then
+            continue
+        fi
+
+        cat >> "$ROUTER_RUNTIME_CFG" <<EOF
+
+[klippy $name]
+sock: $sock
+on_connect: M118 Router connected to $name
+EOF
+    done
+}
+
+start() {
+    if ! is_router_enabled; then
+        echo "Router disabled; not starting klipper-router."
+        exit 0
+    fi
+
+    if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE" 2>/dev/null)" 2>/dev/null; then
+        echo "klipper-router already running"
+        exit 0
+    fi
+
+    mkdir -p /home/lava/printer_data/config/extended/router /home/lava/printer_data/logs
+    cp "$ROUTER_CFG" "$ROUTER_RUNTIME_CFG"
+    append_instance_blocks
+
+    touch "$LOGFILE"
+    chown "$RUN_AS:$RUN_AS" "$LOGFILE"
+    rm -f "$PIDFILE"
+
+    printf "Starting klipper-router: "
+    start-stop-daemon -S -b -q -m -u "$RUN_AS" \
+        -p "$PIDFILE" \
+        -x "$PYTHON" -- \
+        "$DAEMON" -c "$ROUTER_RUNTIME_CFG"
+    echo "OK"
+}
+
+stop() {
+    printf "Stopping klipper-router: "
+    if [ -f "$PIDFILE" ]; then
+        start-stop-daemon -K -q -p "$PIDFILE" -s TERM
+        rm -f "$PIDFILE"
+        echo "OK"
+    else
+        echo "not running"
+    fi
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart|reload)
+        stop
+        sleep 1
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit $?
