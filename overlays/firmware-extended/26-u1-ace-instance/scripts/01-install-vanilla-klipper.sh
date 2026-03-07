@@ -31,18 +31,21 @@ install -m 644 \
 
 find_python_module_path() {
   local root="$1"
-  local rel="$2"
+  local module="$2"
 
   find "$root" \
-    \( -path "*/python*/$rel" -o \
-       -path "*/python*/site-packages/$rel" -o \
-       -path "*/python*/dist-packages/$rel" \) \
+    \( -path "*/python*/$module/__init__.py" -o \
+       -path "*/python*/$module/__init__.pyc" -o \
+       -path "*/python*/site-packages/$module/__init__.py" -o \
+       -path "*/python*/site-packages/$module/__init__.pyc" -o \
+       -path "*/python*/dist-packages/$module/__init__.py" -o \
+       -path "*/python*/dist-packages/$module/__init__.pyc" \) \
     2>/dev/null | head -n 1
 }
 
 echo ">> Verifying Python dependencies in target rootfs..."
-JINJA2_PATH="$(find_python_module_path "$ROOTFS_DIR" 'jinja2/__init__.py')"
-SERIAL_PATH="$(find_python_module_path "$ROOTFS_DIR" 'serial/__init__.py')"
+JINJA2_PATH="$(find_python_module_path "$ROOTFS_DIR" 'jinja2')"
+SERIAL_PATH="$(find_python_module_path "$ROOTFS_DIR" 'serial')"
 
 if [[ -z "$JINJA2_PATH" ]]; then
   echo "Error: jinja2 is missing from the target rootfs."
