@@ -21,7 +21,7 @@ cache_git.sh "$ACEPRO_DIR" "$ACEPRO_GIT_URL" "$ACEPRO_GIT_SHA"
 
 rm -rf "$INSTALL_DIR"
 mkdir -p "$INSTALL_DIR"
-cp -a "$KLIPPER_DIR/." "$INSTALL_DIR/"
+git -C "$KLIPPER_DIR" archive --format=tar "$KLIPPER_GIT_SHA" | tar -xf - -C "$INSTALL_DIR"
 
 install -d "$INSTALL_DIR/klippy/extras/ace"
 cp -a "$ACEPRO_DIR/extras/ace/." "$INSTALL_DIR/klippy/extras/ace/"
