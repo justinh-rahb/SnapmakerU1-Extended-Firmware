@@ -3,7 +3,7 @@
 KLIPPER_GIT_URL=https://github.com/Klipper3d/klipper.git
 KLIPPER_GIT_SHA=9e8c4770eda8d09c865ed7fc7296df57a713597c
 ACEPRO_GIT_URL=https://github.com/justinh-rahb/ACEPRO.git
-ACEPRO_GIT_SHA=55ec2f75231fb7a2f8e4ddf2f7c3b68cfad9ff07
+ACEPRO_GIT_SHA=55ec2f783410aadacb0776cf9649cad7694455cf
 
 if [[ -z "$CREATE_FIRMWARE" ]]; then
   echo "Error: This script should be run within the create_firmware.sh environment."
