@@ -33,9 +33,7 @@ find_python_module_path() {
   local root="$1"
   local rel="$2"
 
-  find \
-    "$root/usr/lib" \
-    "$root/usr/local/lib" \
+  find "$root" \
     \( -path "*/python*/site-packages/$rel" -o \
        -path "*/python*/dist-packages/$rel" \) \
     2>/dev/null | head -n 1
