@@ -11,16 +11,11 @@ fi
 set -eo pipefail
 
 ACEPRO_DIR="$CACHE_DIR/ACEPRO"
-PAYLOAD_DIR="$ROOTFS_DIR/usr/local/share/ace-klipper"
+BASE_KLIPPER_DIR="$ROOTFS_DIR/home/lava/klipper"
+ACE_KLIPPER_DIR="$ROOTFS_DIR/home/lava/klipper-ace"
+ACE_EXTRAS_DIR="$ACE_KLIPPER_DIR/klippy/extras"
 
 cache_git.sh "$ACEPRO_DIR" "$ACEPRO_GIT_URL" "$ACEPRO_GIT_SHA"
-
-rm -rf "$PAYLOAD_DIR"
-install -d "$PAYLOAD_DIR/ace"
-cp -a "$ACEPRO_DIR/extras/ace/." "$PAYLOAD_DIR/ace/"
-install -m 644 \
-  "$ACEPRO_DIR/extras/virtual_pins.py" \
-  "$PAYLOAD_DIR/virtual_pins.py"
 
 find_python_module_path() {
   local root="$1"
@@ -54,4 +49,20 @@ fi
 echo "   jinja2:  $JINJA2_PATH"
 echo "   pyserial: $SERIAL_PATH"
 
-chown -R 1000:1000 "$PAYLOAD_DIR"
+if [[ ! -d "$BASE_KLIPPER_DIR" ]]; then
+  echo "Error: missing stock Klipper tree at $BASE_KLIPPER_DIR"
+  exit 1
+fi
+
+rm -rf "$ACE_KLIPPER_DIR"
+mkdir -p "$ACE_KLIPPER_DIR"
+cp -a "$BASE_KLIPPER_DIR/." "$ACE_KLIPPER_DIR/"
+
+rm -rf "$ACE_EXTRAS_DIR/ace"
+install -d "$ACE_EXTRAS_DIR/ace"
+cp -a "$ACEPRO_DIR/extras/ace/." "$ACE_EXTRAS_DIR/ace/"
+install -m 644 \
+  "$ACEPRO_DIR/extras/virtual_pins.py" \
+  "$ACE_EXTRAS_DIR/virtual_pins.py"
+
+chown -R 1000:1000 "$ACE_KLIPPER_DIR"
