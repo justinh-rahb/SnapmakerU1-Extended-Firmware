@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-KLIPPER_GIT_URL=https://github.com/Klipper3d/klipper.git
-KLIPPER_GIT_SHA=9e8c4770eda8d09c865ed7fc7296df57a713597c
 ACEPRO_GIT_URL=https://github.com/justinh-rahb/ACEPRO.git
 ACEPRO_GIT_SHA=55ec2f783410aadacb0776cf9649cad7694455cf
 
@@ -12,22 +10,17 @@ fi
 
 set -eo pipefail
 
-KLIPPER_DIR="$CACHE_DIR/klipper-vanilla"
 ACEPRO_DIR="$CACHE_DIR/ACEPRO"
-INSTALL_DIR="$ROOTFS_DIR/home/lava/klipper-vanilla"
+PAYLOAD_DIR="$ROOTFS_DIR/usr/local/share/ace-klipper"
 
-cache_git.sh "$KLIPPER_DIR" "$KLIPPER_GIT_URL" "$KLIPPER_GIT_SHA"
 cache_git.sh "$ACEPRO_DIR" "$ACEPRO_GIT_URL" "$ACEPRO_GIT_SHA"
 
-rm -rf "$INSTALL_DIR"
-mkdir -p "$INSTALL_DIR"
-git -C "$KLIPPER_DIR" archive --format=tar "$KLIPPER_GIT_SHA" | tar -xf - -C "$INSTALL_DIR"
-
-install -d "$INSTALL_DIR/klippy/extras/ace"
-cp -a "$ACEPRO_DIR/extras/ace/." "$INSTALL_DIR/klippy/extras/ace/"
+rm -rf "$PAYLOAD_DIR"
+install -d "$PAYLOAD_DIR/ace"
+cp -a "$ACEPRO_DIR/extras/ace/." "$PAYLOAD_DIR/ace/"
 install -m 644 \
   "$ACEPRO_DIR/extras/virtual_pins.py" \
-  "$INSTALL_DIR/klippy/extras/virtual_pins.py"
+  "$PAYLOAD_DIR/virtual_pins.py"
 
 find_python_module_path() {
   local root="$1"
@@ -61,4 +54,4 @@ fi
 echo "   jinja2:  $JINJA2_PATH"
 echo "   pyserial: $SERIAL_PATH"
 
-chown -R 1000:1000 "$INSTALL_DIR"
+chown -R 1000:1000 "$PAYLOAD_DIR"

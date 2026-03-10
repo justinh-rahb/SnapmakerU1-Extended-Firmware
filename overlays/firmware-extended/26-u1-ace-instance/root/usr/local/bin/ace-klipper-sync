@@ -1,0 +1,52 @@
+#!/bin/sh
+
+set -eu
+
+SRC_DIR="/home/lava/klipper"
+DST_DIR="/home/lava/klipper-ace"
+PAYLOAD_DIR="/usr/local/share/ace-klipper"
+EXTRAS_DIR="$DST_DIR/klippy/extras"
+
+copy_tree() {
+    rm -rf "$DST_DIR"
+    mkdir -p "$DST_DIR"
+    cp -a "$SRC_DIR/." "$DST_DIR/"
+}
+
+install_payload() {
+    mkdir -p "$EXTRAS_DIR"
+    rm -rf "$EXTRAS_DIR/ace"
+    rm -f "$EXTRAS_DIR/virtual_pins.py"
+    cp -a "$PAYLOAD_DIR/ace" "$EXTRAS_DIR/ace"
+    cp -a "$PAYLOAD_DIR/virtual_pins.py" "$EXTRAS_DIR/virtual_pins.py"
+    chown -R lava:lava "$DST_DIR"
+}
+
+if [ ! -d "$SRC_DIR" ]; then
+    echo "Missing source Klipper tree: $SRC_DIR" >&2
+    exit 1
+fi
+
+if [ ! -d "$PAYLOAD_DIR/ace" ] || [ ! -f "$PAYLOAD_DIR/virtual_pins.py" ]; then
+    echo "Missing ACE payload under $PAYLOAD_DIR" >&2
+    exit 1
+fi
+
+case "${1:-sync}" in
+    sync)
+        if [ ! -d "$DST_DIR" ]; then
+            copy_tree
+        fi
+        install_payload
+        ;;
+    refresh)
+        copy_tree
+        install_payload
+        ;;
+    *)
+        echo "Usage: $0 {sync|refresh}" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

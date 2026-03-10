@@ -5,7 +5,9 @@ Adds the ACE-specific auxiliary Klipper instance on top of
 
 Installed components:
 
-- `/home/lava/klipper-vanilla`
+- `/usr/local/share/ace-klipper`
+- `/usr/local/bin/ace-klipper-sync`
+- `/home/lava/klipper-ace`
 - `extended/klipper/16_router_ace_bridge.cfg`
 - `extended/router/instances/ace/enabled_config`
 - `extended/router/instances/ace/klippy_path`
@@ -16,9 +18,14 @@ Installed components:
 
 Enable flow:
 
+- refresh `/home/lava/klipper-ace` from `/home/lava/klipper`
+- inject `ace/` and `virtual_pins.py` into the copied ACE runtime tree
 - set `[ace] enabled` to `true` in `extended2.cfg`
 - `26_settings_ace.yaml` also ensures `[router] enabled` is `true`
 - restart `S98klipper-router-instances`, `S99klipper-router`, and `S60klipper`
+
+The stock `/home/lava/klipper` tree is not modified. ACE runs from the copied
+`/home/lava/klipper-ace` tree.
 
 Manual bridge entry points on the main Klipper instance:
 
