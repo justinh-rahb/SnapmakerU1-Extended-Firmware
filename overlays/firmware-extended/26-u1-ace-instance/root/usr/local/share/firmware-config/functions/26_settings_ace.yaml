@@ -48,9 +48,9 @@ settings:
               - |
                 /usr/local/bin/extended-config.py add /home/lava/printer_data/config/extended/extended2.cfg ace enabled true
                 /usr/local/bin/extended-config.py add /home/lava/printer_data/config/extended/extended2.cfg router enabled true
+                /etc/init.d/S60klipper restart
                 /etc/init.d/S98klipper-router-instances restart
                 /etc/init.d/S99klipper-router restart
-                /etc/init.d/S60klipper restart
           "false":
             label: Disabled
             cmd:
@@ -58,7 +58,7 @@ settings:
               - -xc
               - |
                 /usr/local/bin/extended-config.py add /home/lava/printer_data/config/extended/extended2.cfg ace enabled false
+                /etc/init.d/S60klipper restart
                 /etc/init.d/S98klipper-router-instances restart
                 /etc/init.d/S99klipper-router restart
-                /etc/init.d/S60klipper restart
         default: "false"
