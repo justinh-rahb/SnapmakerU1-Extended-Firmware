@@ -15,6 +15,7 @@ BASE_KLIPPER_DIR="$ROOTFS_DIR/home/lava/klipper"
 ACE_KLIPPER_DIR="$ROOTFS_DIR/home/lava/klipper-ace"
 ACE_EXTRAS_DIR="$ACE_KLIPPER_DIR/klippy/extras"
 ACE_MCU_FILE="$ACE_KLIPPER_DIR/klippy/mcu.py"
+HOST_PYTHON="$(command -v python3 || command -v python || true)"
 
 cache_git.sh "$ACEPRO_DIR" "$ACEPRO_GIT_URL" "$ACEPRO_GIT_SHA"
 
@@ -71,7 +72,12 @@ if [[ ! -f "$ACE_MCU_FILE" ]]; then
   exit 1
 fi
 
-python3 - "$ACE_MCU_FILE" <<'PY'
+if [[ -z "$HOST_PYTHON" ]]; then
+  echo "Error: neither python3 nor python is available in the build environment."
+  exit 1
+fi
+
+"$HOST_PYTHON" - "$ACE_MCU_FILE" <<'PY'
 import pathlib
 import sys
 
