@@ -25,8 +25,9 @@ Enable flow:
 The stock `/home/lava/klipper` tree is not modified. The firmware image
 already contains a copied `/home/lava/klipper-ace` tree with the ACE payload
 injected at build time. The ACE instance also starts its own `klippy_mcu`
-sidecar so the copied Snapmaker-derived Klipper runtime has a live
-`/tmp/klipper_host_mcu` backend.
+sidecar bound to `/tmp/klipper_host_mcu_ace` so the copied
+Snapmaker-derived Klipper runtime does not contend for the main instance's
+default host-MCU endpoint.
 
 Manual bridge entry points on the main Klipper instance:
 
