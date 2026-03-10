@@ -9,8 +9,6 @@ Installed components:
 - `extended/klipper/16_router_ace_bridge.cfg`
 - `extended/router/instances/ace/enabled_config`
 - `extended/router/instances/ace/klippy_path`
-- `extended/router/instances/ace/mcu_path`
-- `extended/router/instances/ace/mcu_args`
 - `extended/router/instances/ace/printer.cfg`
 - `extended/router/instances/ace/klipper/10_ace_instance.cfg`
 - `extended/router/instances/ace/klipper/20_ace_events.cfg`
@@ -24,10 +22,10 @@ Enable flow:
 
 The stock `/home/lava/klipper` tree is not modified. The firmware image
 already contains a copied `/home/lava/klipper-ace` tree with the ACE payload
-injected at build time. The ACE instance also starts its own `klippy_mcu`
-sidecar bound to `/tmp/klipper_host_mcu_ace` so the copied
-Snapmaker-derived Klipper runtime does not contend for the main instance's
-default host-MCU endpoint.
+injected at build time. The copied ACE runtime also patches its own
+`klippy/mcu.py` so the shared `/tmp/klipper_host_mcu` endpoint is treated as
+a dummy/non-fatal dependency instead of requiring a dedicated `klippy_mcu`
+sidecar.
 
 Manual bridge entry points on the main Klipper instance:
 
