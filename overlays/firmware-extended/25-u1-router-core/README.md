@@ -17,6 +17,8 @@ Behavior:
 - router startup is gated on `[router] enabled` in `extended2.cfg`
 - instance startup is also gated globally by router enablement
 - each instance may override `klippy_path`
+- each instance may optionally start a sidecar MCU helper via `mcu_path`
+  and `mcu_args`
 - each instance may use `enabled_config` to bind startup to any
   `extended-config.py get <section> <key> <default>` boolean
 

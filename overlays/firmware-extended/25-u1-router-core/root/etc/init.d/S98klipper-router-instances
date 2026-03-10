@@ -50,6 +50,28 @@ instance_cfg() {
     echo "$INSTANCE_DIR/$1/printer.cfg"
 }
 
+instance_mcu_path() {
+    name="$1"
+    mcu_file="$INSTANCE_DIR/$name/mcu_path"
+
+    if [ -f "$mcu_file" ]; then
+        sed -n '1p' "$mcu_file"
+    fi
+}
+
+instance_mcu_args() {
+    name="$1"
+    mcu_args_file="$INSTANCE_DIR/$name/mcu_args"
+
+    if [ -f "$mcu_args_file" ]; then
+        sed -n '1p' "$mcu_args_file"
+    fi
+}
+
+instance_mcu_pidfile() {
+    echo "/var/run/klippy-router-$1-mcu.pid"
+}
+
 instance_sock() {
     echo "/home/lava/printer_data/comms/klippy-router-$1.sock"
 }
@@ -82,6 +104,49 @@ pid_matches_instance() {
     return 0
 }
 
+start_instance_mcu() {
+    name="$1"
+    mcu="$(instance_mcu_path "$name")"
+    mcu_args="$(instance_mcu_args "$name")"
+    mcu_pidfile="$(instance_mcu_pidfile "$name")"
+
+    [ -n "$mcu" ] || return 0
+    [ -x "$mcu" ] || {
+        echo "Skipping instance $name MCU: missing executable $mcu"
+        return 1
+    }
+
+    if [ -f "$mcu_pidfile" ]; then
+        pid="$(cat "$mcu_pidfile" 2>/dev/null)"
+        if [ -n "$pid" ] && [ -r "/proc/$pid/cmdline" ]; then
+            cmdline="$(tr '\000' ' ' < "/proc/$pid/cmdline" 2>/dev/null)"
+            echo "$cmdline" | grep -F "$mcu" >/dev/null 2>&1 && return 0
+        fi
+        rm -f "$mcu_pidfile"
+    fi
+
+    if [ -n "$mcu_args" ]; then
+        set -- $mcu_args
+        start-stop-daemon -S -b -q -m -u "$RUN_AS" \
+            -p "$mcu_pidfile" \
+            -x "$mcu" -- "$@"
+    else
+        start-stop-daemon -S -b -q -m -u "$RUN_AS" \
+            -p "$mcu_pidfile" \
+            -x "$mcu"
+    fi
+}
+
+stop_instance_mcu() {
+    name="$1"
+    mcu_pidfile="$(instance_mcu_pidfile "$name")"
+
+    if [ -f "$mcu_pidfile" ]; then
+        start-stop-daemon -K -q -p "$mcu_pidfile" -s TERM
+        rm -f "$mcu_pidfile"
+    fi
+}
+
 start_instance() {
     name="$1"
     cfg="$(instance_cfg "$name")"
@@ -111,6 +176,8 @@ start_instance() {
     touch "$log"
     chown "$RUN_AS:$RUN_AS" "$log"
 
+    start_instance_mcu "$name" || return 1
+
     printf "Starting klippy-router-%s: " "$name"
     start-stop-daemon -S -b -q -m -u "$RUN_AS" \
         -p "$pidfile" \
@@ -131,6 +198,8 @@ stop_instance() {
     else
         echo "not running"
     fi
+
+    stop_instance_mcu "$name"
 }
 
 start() {
