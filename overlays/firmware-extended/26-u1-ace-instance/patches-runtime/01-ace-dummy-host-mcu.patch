@@ -1,0 +1,42 @@
+--- mcu.py
++++ mcu.py
+@@ -786,6 +786,7 @@
+             cbid.add_uuid(config, canbus_uuid, self._canbus_iface)
+             self._printer.load_object(config, 'canbus_stats %s' % (name,))
+         else:
+-            self._serialport = config.get('serial')
++            self._serialport = config.get('serial')
++            self._ace_u1_dummy_mcu = self._serialport == "/tmp/klipper_host_mcu"
+             if not (self._serialport.startswith("/dev/rpmsg_")
+                     or self._serialport.startswith("/tmp/klipper_host_")):
+                 self._baud = config.getint('baud', 250000, minval=2400)
+@@ -809,6 +810,9 @@
+     def get_restart_helper(self):
+         return self._restart_helper
+     def _handle_shutdown(self, params):
++        if self._ace_u1_dummy_mcu:
++            logging.info("ACE dummy MCU ignoring shutdown event on shared host endpoint")
++            return
+         if self._is_shutdown:
+             return
+         self._is_shutdown = True
+@@ -821,6 +825,9 @@
+                              "event_type": event_type,
+                              "shutdown_clock": shutdown_clock})
+     def _handle_starting(self, params):
++        if self._ace_u1_dummy_mcu:
++            logging.info("ACE dummy MCU ignoring spontaneous restart on shared host endpoint")
++            return
+         if not self._is_shutdown:
+             self._printer.invoke_async_shutdown("MCU '%s' spontaneous restart"
+                                                 % (self._name,))
+@@ -901,6 +908,8 @@
+     def force_local_shutdown(self):
+         self._is_shutdown = True
+         self._shutdown(force=True)
+     def check_timeout(self, eventtime):
++        if self._ace_u1_dummy_mcu:
++            return
+         if (self._clocksync.is_active() or self._mcu.is_fileoutput()
+             or self._is_timeout):
+             return
