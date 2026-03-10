@@ -23,7 +23,7 @@ status:
 settings:
   router:
     items:
-      enabled:
+      router_enabled:
         label: Router Substrate
         description: Enable the shared klipper-router service and auxiliary Klipper instance manager.
         get_cmd:

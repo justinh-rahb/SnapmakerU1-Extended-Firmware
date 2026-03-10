@@ -29,7 +29,7 @@ status:
 settings:
   ace:
     items:
-      enabled:
+      ace_enabled:
         label: ACE Instance
         description: Enable the ACE auxiliary Klipper instance and bridge macros.
         get_cmd:
