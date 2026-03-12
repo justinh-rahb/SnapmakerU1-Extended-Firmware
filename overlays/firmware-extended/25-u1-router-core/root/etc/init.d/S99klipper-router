@@ -57,7 +57,9 @@ append_instance_blocks() {
 
 [klippy $name]
 sock: $sock
-on_connect: M118 Router connected to $name
+on_connect:
+    M118 Router connected to $name
+    ROUTER_ON_CONNECTED PRINTER=$name
 EOF
     done
 }
