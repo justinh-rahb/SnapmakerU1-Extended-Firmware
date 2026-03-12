@@ -59,7 +59,6 @@ append_instance_blocks() {
 sock: $sock
 on_connect:
     M118 Router connected to $name
-    ROUTER_ON_CONNECTED PRINTER=$name
 EOF
     done
 }
