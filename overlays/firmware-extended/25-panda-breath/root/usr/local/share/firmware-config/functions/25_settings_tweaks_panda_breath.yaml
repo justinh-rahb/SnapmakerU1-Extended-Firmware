@@ -3,7 +3,7 @@ settings:
     items:
       panda_breath:
         label: Panda Breath Chamber Heater
-        description: BIQU Panda Breath WiFi chamber heater integration via WebSocket. Requires the device on the same network.
+        description: Experimental BIQU Panda Breath WiFi chamber heater integration via WebSocket. Requires stable network connectivity, may be interrupted by WiFi or device communication issues, and should not be used unattended.
         help_url: https://github.com/justinh-rahb/panda-breath
         get_cmd:
           - bash
@@ -12,7 +12,7 @@ settings:
         options:
           enabled:
             label: Enabled
-            confirm: "Enable Panda Breath? This adds chamber heater control via SET_HEATER_TEMPERATURE and M141. The device must be on the same network."
+            confirm: "Enable Panda Breath? This experimental integration adds chamber heater control via SET_HEATER_TEMPERATURE and M141. It depends on reliable WiFi/WebSocket connectivity to the Panda Breath, may stop working if the device or network connection is interrupted, and should not be used unattended."
             cmd:
               - bash
               - -xc

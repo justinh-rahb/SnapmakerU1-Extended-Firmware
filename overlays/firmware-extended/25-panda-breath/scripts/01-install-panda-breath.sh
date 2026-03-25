@@ -20,8 +20,4 @@ echo ">> Installing Panda Breath Klipper extras..."
 install -Dm644 -o "$LAVA_UID" -g "$LAVA_GID" "$TARGET_DIR/panda_breath.py" \
   "$ROOTFS_DIR/usr/local/share/firmware-config/tweaks/klipper/panda_breath.py"
 
-echo ">> Installing Panda Breath init scripts..."
-install -Dm755 "$(dirname "$0")/../root/etc/init.d/S59panda-breath" \
-  "$ROOTFS_DIR/etc/init.d/S59panda-breath"
-
 echo ">> Panda Breath installation completed successfully."
