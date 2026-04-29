@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-GIT_URL=https://github.com/justinh-rahb/panda-breath.git
-GIT_SHA=89c2944d2902b60bceaa7522dc2a65655ba7f2e9
+GIT_URL=https://github.com/justinh-rahb/pandabreath-klipper.git
+GIT_SHA=2fc8c03b918519060f0a2cc6b40a56fbc232e74f
 
 if [[ -z "$CREATE_FIRMWARE" ]]; then
   echo "Error: This script should be run within the create_firmware.sh environment."
@@ -10,7 +10,7 @@ fi
 
 set -eo pipefail
 
-TARGET_DIR="$CACHE_DIR/panda-breath"
+TARGET_DIR="$CACHE_DIR/pandabreath-klipper"
 LAVA_UID=1000
 LAVA_GID=1000
 
