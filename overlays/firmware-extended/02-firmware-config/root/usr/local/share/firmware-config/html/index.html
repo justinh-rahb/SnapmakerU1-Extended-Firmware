@@ -144,6 +144,7 @@
         <div class="modal">
             <div class="modal-title" id="confirm-title"></div>
             <div class="modal-message" id="confirm-message" style="white-space:pre-wrap"></div>
+            <div id="confirm-input-wrap" style="display:none;"></div>
             <div class="modal-buttons">
                 <button class="btn btn-secondary" onclick="hideConfirmModal()">Cancel</button>
                 <button class="btn btn-danger" id="confirm-btn">Confirm</button>
@@ -319,7 +320,7 @@
                             const options = Object.entries(setting.options)
                                 .filter(([optKey, optVal]) => !optVal.hidden || optKey === setting.current || showHidden)
                                 .map(([optKey, optVal]) => {
-                                return `<option value="${optKey}" data-label="${encodeURIComponent(optVal.label)}" data-confirm="${encodeURIComponent(optVal.confirm || '')}"${optKey === setting.current ? ' selected' : ''}>${optVal.label}</option>`;
+                                return `<option value="${optKey}" data-label="${encodeURIComponent(optVal.label)}" data-confirm="${encodeURIComponent(optVal.confirm || '')}" data-inputs="${encodeURIComponent(JSON.stringify(optVal.inputs || null))}"${optKey === setting.current ? ' selected' : ''}>${optVal.label}</option>`;
                             }).join('');
                             return `<div class="row"${setting.help_url ? ` onclick="if(!event.target.closest('select'))window.open('${setting.help_url}','_blank')"` : ''}>
                                 <div class="row-label-wrap">
@@ -389,12 +390,70 @@
 
         let confirmOnCancel = null;
 
-        function showConfirmModal(title, message, onConfirm, onCancel) {
+        function renderConfirmInputs(inputs) {
+            const wrap = $('confirm-input-wrap');
+            if (!inputs || !inputs.length) {
+                wrap.style.display = 'none';
+                wrap.innerHTML = '';
+                return;
+            }
+            wrap.innerHTML = inputs.map(inp =>
+                `<div style="margin-top:12px;">
+                    <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;">${inp.label || inp.name}</label>
+                    <input type="text" class="input" style="width:100%" id="cfi-${inp.name}" name="${inp.name}"
+                        placeholder="${inp.placeholder || ''}"
+                        data-regex="${inp.regex || ''}"
+                        oninput="validateConfirmInputs()">
+                    <div id="cfe-${inp.name}" style="font-size:11px;color:var(--error);margin-top:3px;min-height:14px;"></div>
+                </div>`
+            ).join('');
+            wrap.style.display = 'block';
+        }
+
+        function validateConfirmInputs() {
+            const wrap = $('confirm-input-wrap');
+            if (!wrap || wrap.style.display === 'none') { $('confirm-btn').disabled = false; return; }
+            let valid = true;
+            wrap.querySelectorAll('input[name]').forEach(field => {
+                const errEl = $('cfe-' + field.name);
+                const val = field.value.trim();
+                const rx = field.dataset.regex;
+                if (!val) {
+                    valid = false;
+                    if (errEl) errEl.textContent = '';
+                } else if (rx && !new RegExp(rx).test(val)) {
+                    valid = false;
+                    if (errEl) errEl.textContent = 'Invalid format';
+                } else {
+                    if (errEl) errEl.textContent = '';
+                }
+            });
+            $('confirm-btn').disabled = !valid;
+        }
+
+        function getConfirmInputValues() {
+            const wrap = $('confirm-input-wrap');
+            const values = {};
+            if (wrap && wrap.style.display !== 'none') {
+                wrap.querySelectorAll('input[name]').forEach(f => { values[f.name] = f.value.trim(); });
+            }
+            return values;
+        }
+
+        function showConfirmModal(title, message, onConfirm, onCancel, inputs) {
             $('confirm-title').textContent = title;
             $('confirm-message').textContent = message;
-            $('confirm-btn').onclick = () => { hideConfirmModal(); onConfirm(); };
+            renderConfirmInputs(inputs);
+            validateConfirmInputs();
+            $('confirm-btn').onclick = () => {
+                const inputValues = getConfirmInputValues();
+                hideConfirmModal();
+                onConfirm(inputValues);
+            };
             confirmOnCancel = onCancel || null;
             $('confirm-modal').classList.add('visible');
+            const first = $('confirm-input-wrap').querySelector('input');
+            if (first) first.focus();
         }
 
         function hideConfirmModal() {
@@ -658,6 +717,7 @@
             const selectedOption = selectEl.selectedOptions[0];
             const optLabel = decodeURIComponent(selectedOption.dataset.label || value);
             const confirmMsg = decodeURIComponent(selectedOption.dataset.confirm || '');
+            const inputs = JSON.parse(decodeURIComponent(selectedOption.dataset.inputs || 'null'));
             const label = selectEl.parentElement.querySelector('.row-label').textContent;
 
             const message = confirmMsg || `Change ${label} to "${optLabel}"?`;
@@ -666,17 +726,23 @@
             showConfirmModal(
                 `Update ${label}`,
                 `${message}\n\n${warning}`,
-                () => { selectEl.dataset.prevValue = value; doUpdateSetting(key, value); },
-                () => { selectEl.value = prevValue; }
+                (inputValues) => { selectEl.dataset.prevValue = value; doUpdateSetting(key, value, inputValues); },
+                () => { selectEl.value = prevValue; },
+                inputs
             );
         }
 
-        async function doUpdateSetting(key, value) {
+        async function doUpdateSetting(key, value, inputValues) {
             showActionModal('Updating Setting', 'Applying changes...');
             $('action-log').classList.add('visible');
 
             try {
-                const resp = await apiFetch(`api/settings/${key}/${value}`, { method: 'POST' });
+                const opts = { method: 'POST' };
+                if (inputValues && Object.keys(inputValues).length > 0) {
+                    opts.headers = { 'Content-Type': 'application/json' };
+                    opts.body = JSON.stringify(inputValues);
+                }
+                const resp = await apiFetch(`api/settings/${key}/${value}`, opts);
                 await streamResponse(resp);
                 refreshAll();
             } catch (e) {
