@@ -4,6 +4,7 @@ import argparse
 import glob
 import json
 import os
+import re
 import subprocess
 import time
 import fcntl
@@ -122,13 +123,14 @@ class FirmwareConfigHandler(SimpleHTTPRequestHandler):
     def _finish_text_stream(self):
         pass
 
-    def _stream_command(self, cmd, stop_token=None):
+    def _stream_command(self, cmd, stop_token=None, env=None):
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            bufsize=1
+            bufsize=1,
+            env=env
         )
         try:
             for line in iter(process.stdout.readline, ""):
@@ -259,6 +261,7 @@ class FirmwareConfigHandler(SimpleHTTPRequestHandler):
 
                 result[section_key] = {
                     'title': section_cfg.get('title', section_key),
+                    'hidden': section_cfg.get('hidden', False),
                     'items': section_items
                 }
 
@@ -300,6 +303,10 @@ class FirmwareConfigHandler(SimpleHTTPRequestHandler):
                         opt_info = {"label": opt_val["label"]}
                         if "confirm" in opt_val:
                             opt_info["confirm"] = opt_val["confirm"]
+                        if opt_val.get("hidden"):
+                            opt_info["hidden"] = True
+                        if "inputs" in opt_val:
+                            opt_info["inputs"] = opt_val["inputs"]
                         options_data[opt_key] = opt_info
 
                     settings_list.append({
@@ -308,6 +315,7 @@ class FirmwareConfigHandler(SimpleHTTPRequestHandler):
                         "description": config.get("description"),
                         "help_url": config.get("help_url"),
                         "current": current_value,
+                        "hidden": config.get("hidden", False),
                         "options": options_data
                     })
                 if settings_list:
@@ -395,7 +403,8 @@ class FirmwareConfigHandler(SimpleHTTPRequestHandler):
                         "help_url": cfg.get("help_url"),
                         "confirm": cfg.get("confirm", False),
                         "background": cfg.get("background", False),
-                        "download_file": cfg.get("download_file")
+                        "download_file": cfg.get("download_file"),
+                        "hidden": cfg.get("hidden", False)
                     })
                 if actions_list:
                     result[group_key] = {
@@ -422,6 +431,33 @@ class FirmwareConfigHandler(SimpleHTTPRequestHandler):
 
             option_config = config["options"][value]
 
+            input_values = {}
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                try:
+                    parsed = json.loads(self.rfile.read(content_length))
+                    if isinstance(parsed, dict):
+                        input_values = {k: str(v) for k, v in parsed.items()}
+                except Exception:
+                    pass
+
+            valid_inputs = {}
+            for inp in option_config.get("inputs", []):
+                name = inp.get("name")
+                if not name:
+                    continue
+                val = input_values.pop(name, "")
+                rx = inp.get("regex")
+                if not val or (rx and not re.match(rx, val)):
+                    self.send_error(400, f"Invalid or missing input: {name}")
+                    return
+                valid_inputs[name] = val
+            if input_values:
+                self.send_error(400, f"Unknown inputs: {', '.join(input_values)}")
+                return
+
+            cmd_env = {**os.environ, **valid_inputs}
+
             log(f"Updating setting {setting_key} to {value}")
 
             self._start_text_stream()
@@ -432,9 +468,8 @@ class FirmwareConfigHandler(SimpleHTTPRequestHandler):
             self._write_stream_chunk(f"Time: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
             self._write_stream_chunk(f"{'=' * 40}\n\n")
 
-            # Execute the command for this option
             self._write_stream_chunk(f"Applying changes...\n")
-            rc, _ = self._stream_command(option_config["cmd"])
+            rc, _ = self._stream_command(option_config["cmd"], env=cmd_env)
 
             self._write_stream_chunk(f"\n{'=' * 40}\n")
             if rc == 0:
